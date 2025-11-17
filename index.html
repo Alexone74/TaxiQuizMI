@@ -34,7 +34,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
     <script>
-        // ⚠️⚠️⚠️ IMPORTANTE: Usa le STESSE credenziali di simulazione-esame-app.html ⚠️⚠️⚠️
         const firebaseConfig = {
             apiKey: "AIzaSyABT79FZL2feax8vGp894B7tW23qUXh9Fg",
             authDomain: "taxiquizmi.firebaseapp.com",
@@ -43,7 +42,6 @@
             messagingSenderId: "458460079691",
             appId: "1:458460079691:web:ed6be4da38ddaeb91ea4a5"
         };
-
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
     </script>
@@ -124,7 +122,7 @@
         function QuizApp() {
             const [screen, setScreen] = useState('login');
             const [quizData, setQuizData] = useState(null);
-            // Firebase gestisce l'autenticazione
+            // Firebase gestisce autenticazione
             const [error, setError] = useState(null);
             const [selectedQuestions, setSelectedQuestions] = useState([]);
             const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -136,14 +134,28 @@
             const [selectedAnswer, setSelectedAnswer] = useState(null);
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
+            const [currentUser, setCurrentUser] = useState(null);
             const [loginError, setLoginError] = useState('');
             const [isAuthenticated, setIsAuthenticated] = useState(false);
             const [isLoading, setIsLoading] = useState(false);
-            const [currentUser, setCurrentUser] = useState(null);
             const [expandedCategories, setExpandedCategories] = useState([]);
             
             // Funzione per creare hash SHA-256
-                        // Carica i dati del quiz
+            ;
+            
+            // Verifica se un utente è già autenticato
+            useEffect(() => {
+                const unsubscribe = auth.onAuthStateChanged(user => {
+                    if (user) {
+                        setCurrentUser(user);
+                        setIsAuthenticated(true);
+                        setScreen('home');
+                    }
+                });
+                return () => unsubscribe();
+            }, []);
+
+            // Carica i dati del quiz
             useEffect(() => {
                 if (isAuthenticated) {
                     console.log("Caricamento quiz.json...");
@@ -190,30 +202,29 @@
                     });
             }, []);
 
-            const handleLogin = () => {
-                if (!accessCodes) {
-                    setLoginError('Errore nel caricamento dei codici di accesso. Riprova più tardi.');
+            const handleLogin = async () => {
+                if (!email || !password) {
+                    setLoginError('Inserisci email e password');
                     return;
                 }
-
                 setIsLoading(true);
-                
-                // Calcoliamo l'hash del codice inserito
-                const hashedInput = hashCode(accessCode);
-                console.log("Tentativo login con hash:", hashedInput);
-                
-                // Verifichiamo se l'hash corrisponde a uno dei codici salvati
-                if (accessCodes.codes.includes(hashedInput)) {
-                    console.log("Login valido");
+                setLoginError('');
+                try {
+                    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                    setCurrentUser(userCredential.user);
                     setIsAuthenticated(true);
-                    localStorage.setItem('quiz_authenticated', 'true');
                     setScreen('home');
-                    setLoginError('');
-                } else {
-                    console.log("Login non valido");
-                    setLoginError('Codice di accesso non valido');
+                } catch (error) {
+                    if (error.code === 'auth/user-not-found') {
+                        setLoginError('Utente non trovato');
+                    } else if (error.code === 'auth/wrong-password') {
+                        setLoginError('Password errata');
+                    } else if (error.code === 'auth/invalid-email') {
+                        setLoginError('Email non valida');
+                    } else {
+                        setLoginError('Errore: ' + error.message);
+                    }
                 }
-                
                 setIsLoading(false);
             };
 
@@ -340,8 +351,8 @@
                                         </label>
                                         <input
                                             type="text"
-                                            value={accessCode}
-                                            onChange={(e) => setAccessCode(e.target.value)}
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
                                             onKeyPress={handleKeyPress}
                                             placeholder="Inserisci il codice di 8 caratteri"
                                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
