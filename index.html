@@ -10,7 +10,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.2/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    
     <style>
         html, body {
             margin: 0;
@@ -28,6 +28,22 @@
             touch-action: manipulation;
         }
     </style>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyABT79FZL2feax8vGp894B7tW23qUXh9Fg",
+            authDomain: "taxiquizmi.firebaseapp.com",
+            projectId: "taxiquizmi",
+            storageBucket: "taxiquizmi.firebasestorage.app",
+            messagingSenderId: "458460079691",
+            appId: "1:458460079691:web:ed6be4da38ddaeb91ea4a5"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+    </script>
 </head>
 <body>
     <div id="root"></div>
@@ -105,7 +121,7 @@
         function QuizApp() {
             const [screen, setScreen] = useState('login');
             const [quizData, setQuizData] = useState(null);
-            const [accessCodes, setAccessCodes] = useState(null);
+            
             const [error, setError] = useState(null);
             const [selectedQuestions, setSelectedQuestions] = useState([]);
             const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -115,7 +131,9 @@
             const [reviewMode, setReviewMode] = useState(false);
             const [selectedCategories, setSelectedCategories] = useState([]);
             const [selectedAnswer, setSelectedAnswer] = useState(null);
-            const [accessCode, setAccessCode] = useState('');
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [currentUser, setCurrentUser] = useState(null);
             const [loginError, setLoginError] = useState('');
             const [isAuthenticated, setIsAuthenticated] = useState(false);
             const [isLoading, setIsLoading] = useState(false);
@@ -209,11 +227,17 @@
                 setIsLoading(false);
             };
 
-            const handleLogout = () => {
-                setIsAuthenticated(false);
-                localStorage.removeItem('quiz_authenticated');
-                setScreen('login');
-                setAccessCode('');
+            const handleLogout = async () => {
+                try {
+                    await auth.signOut();
+                    setIsAuthenticated(false);
+                    setCurrentUser(null);
+                    setScreen('login');
+                    setEmail('');
+                    setPassword('');
+                } catch (error) {
+                    console.error(error);
+                }
             };
 
             const toggleCategory = (categoryName) => {
