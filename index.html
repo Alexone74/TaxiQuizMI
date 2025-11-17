@@ -366,10 +366,10 @@
                                     
                                     <button
                                         onClick={handleLogin}
-                                        disabled={isLoading || accessCode.length < 3}
+                                        disabled={isLoading || !email || !password}
                                         className={`w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 rounded-xl 
                                                 font-semibold transition-all duration-200 flex items-center justify-center gap-2
-                                                ${(isLoading || accessCode.length < 3) ? 'opacity-70 cursor-not-allowed' : 'hover:opacity-90'}`}
+                                                ${(isLoading || !email || !password) ? 'opacity-70 cursor-not-allowed' : 'hover:opacity-90'}`}
                                     >
                                         {isLoading ? (
                                             <>
